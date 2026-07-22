@@ -1,11 +1,27 @@
-﻿using System.Security.Principal;
+﻿using System.Drawing.Imaging;
+using System.Security.Principal;
 using DRGS_Contracts_Terminal.Time;
 
 namespace DRGS_Contracts_Terminal;
 
 class Program
 {
-    static int Main(string[] args)
+    static void Main(string[] args)
+    {
+        var displayCaptureSession = new DisplayCaptureSession(0, 0);
+        
+        Console.WriteLine($"Using GPU: {displayCaptureSession.GetGraphicsCardName()}");
+        Console.WriteLine($"Using Display: {displayCaptureSession.GetDisplayDeviceName()}");
+        Console.Write("Hit enter to capture the game: ");
+        Console.ReadLine();
+        
+        var bitmapCapture = displayCaptureSession.CaptureDisplay();
+        string imageLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "screen.png");
+        bitmapCapture.Save(imageLocation, ImageFormat.Png);
+        Console.WriteLine($"Screen capture written to {imageLocation}");
+    }
+    
+    /*static int Main(string[] args)
     {
         if (!IsRunningAsAdmin())
         {
@@ -47,9 +63,8 @@ class Program
         SystemClockController.ResyncSystemTime();
         
         return 0;
-    }
+    }*/
     
-
     private static bool IsRunningAsAdmin()
     {
         using var identity = WindowsIdentity.GetCurrent();

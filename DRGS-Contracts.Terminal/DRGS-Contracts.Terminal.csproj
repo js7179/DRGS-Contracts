@@ -7,10 +7,12 @@
         <RootNamespace>DRGS_Contracts_Terminal</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <!-- <ApplicationManifest>app.manifest</ApplicationManifest> -->
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="HPPH.System.Drawing" Version="1.0.0" />
+      <PackageReference Include="ScreenCapture.NET.DX11" Version="3.0.0" />
       <PackageReference Include="System.CommandLine" Version="3.0.0-preview.5.26302.115" />
       <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.10" />
     </ItemGroup>
