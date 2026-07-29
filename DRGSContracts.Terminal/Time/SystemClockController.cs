@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace DRGS_Contracts_Terminal.Time;
+namespace DRGSContracts.Terminal.Time;
 
 /// <summary>
 /// This class is responsible for controlling the system clock. Users can set a specified date & time,

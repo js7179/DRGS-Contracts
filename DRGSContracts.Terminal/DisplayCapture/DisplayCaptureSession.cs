@@ -4,7 +4,7 @@ using HPPH;
 using HPPH.System.Drawing;
 using ScreenCapture.NET;
 
-namespace DRGS_Contracts_Terminal;
+namespace DRGSContracts.Terminal.DisplayCapture;
 
 /// <summary>
 /// A <see href="https://en.wikipedia.org/wiki/Facade_pattern">Facade</see> class that simplifies capturing
@@ -19,6 +19,8 @@ public sealed class DisplayCaptureSession : IDisposable
     private readonly DX11ScreenCapture _screenCapture;
 
     private readonly CaptureZone<ColorBGRA> _fullscreenZone;
+
+    private bool _isDisposed = false;
     
     /// <summary>
     /// Instantiates the facade to provide an easy-to-use method to capture
@@ -79,7 +81,9 @@ public sealed class DisplayCaptureSession : IDisposable
     /// </summary>
     public void Dispose()
     {
+        if (_isDisposed) return;
         _screenCapture.Dispose();
         _screenCaptureService.Dispose();
+        _isDisposed = true;
     }
 }

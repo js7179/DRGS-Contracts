@@ -1,6 +1,6 @@
 ﻿using System.ServiceProcess;
 
-namespace DRGS_Contracts_Terminal.Time;
+namespace DRGSContracts.Terminal.Time;
 
 /// <summary>
 /// This class is responsible for managing the <see href="https://learn.microsoft.com/en-us/windows-server/networking/windows-time-service/windows-time-service-top">W32Time</see> service on Windows platform,
