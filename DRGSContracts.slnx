@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="DRGSContracts.Terminal/DRGSContracts.Terminal.csproj" />
+  <Project Path="DRGSContracts.TimeHook/DRGSContracts.TimeHook.vcxproj" />
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Terminal.Tests/Terminal.Tests.csproj" />
+  </Folder>
 </Solution>

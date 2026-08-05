@@ -3,24 +3,22 @@ using System.CommandLine;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Security.Principal;
-using DRGSContracts.Terminal.Time;
+using System.Globalization;
 using DRGSContracts.Terminal.DisplayCapture;
+using DRGSContracts.Terminal.GameBridge;
 using ScreenCapture.NET;
 using Sharprompt;
 
 namespace DRGSContracts.Terminal;
 
-class Program
+internal static class Program
 {
+    private static readonly string GAME_EXENAME = "DRG Survivor";
+    private static readonly string DLL_PATH = Path.Combine(AppContext.BaseDirectory, "TimeHook.dll");
+    
     private static int Main(string[] args)
     {
-        /*if (!IsRunningAsAdmin())
-        {
-            Console.Error.WriteLine("Program is not running as administrator - elevated privileges needed to manage system clock and W32Time service");
-            return 1;
-        }*/
-
+        // Parse the command-line arguments
         RootCommand rootCommand = new("Program that screengrabs VC/LO information");
         var opts = CliOptions.GetProgramOptions();
         foreach(var opt in opts)
@@ -33,7 +31,45 @@ class Program
                 Console.Error.WriteLine(error.Message);
             return 1;
         }
+        
+        // Find the game process and inject
+        uint pid = GetGameProcessId();
+        DllInjector.InjectDllIntoGame(pid, DLL_PATH);
+        Console.WriteLine($"Injected DLL into game with PID {pid}");
+        
+        while (true)
+        {
+            Console.Write("Enter a date to override (YYYY-MM-DD): ");
+            string? input = Console.ReadLine();
+            if (input is null or "exit")
+            {
+                PipeController.ShutdownOverride();
+                break;
+            }
 
+            if (input is "" or "0")
+            {
+                PipeController.ClearTimeOverride();
+                continue;
+            }
+
+            string inputTrimmed = input.Trim();
+            
+            bool tryParse = DateOnly.TryParseExact(inputTrimmed, "yyyy-MM-dd", 
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOnly);
+            if (!tryParse)
+            {
+                Console.Error.WriteLine("Could not parse date. Try again.");
+                continue;
+            }
+
+            var dto = new DateTimeOffset(dateOnly, new TimeOnly(6, 5), TimeSpan.Zero);
+            PipeController.SendDate(dto);
+            Console.WriteLine($"Wrote {dto:yyyy-MM-dd} to the pipe (filetime {dto.ToFileTime()})");
+        }
+        
+        /*
+        // Main loop of the program
         int gpuIndex = parseResult.GetRequiredValue<int>("--gpu-index"),
             displayIndex = parseResult.GetRequiredValue<int>("--display-index");
         var outputFolder = parseResult.GetRequiredValue<DirectoryInfo>("--output-folder");
@@ -69,16 +105,29 @@ class Program
                     Console.Error.WriteLine($"Unknown action: {value}");
                     continue;
             }
-        }
+        }*/
         
         return 0;
     }
-    
-    private static bool IsRunningAsAdmin()
+
+    /// <summary>
+    /// Helper function that searches for the game's process, prompting the user until it finds the game process
+    /// and returns its associated PID. If there are multiple copies of the game running, then the first one is taken
+    /// and returned. 
+    /// </summary>
+    /// <returns>The process ID of the game</returns>
+    private static uint GetGameProcessId()
     {
-        using var identity = WindowsIdentity.GetCurrent();
-        var principal = new WindowsPrincipal(identity);
-        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        var processes = Process.GetProcessesByName(GAME_EXENAME);
+        while (processes.Length == 0)
+        {
+            Console.WriteLine($"Could not find \"{GAME_EXENAME}\" to inject into. Hit enter when the game has been started: ");
+            Console.ReadLine();
+            processes = Process.GetProcessesByName(GAME_EXENAME);
+        }
+        var gameProcess = processes.First();
+        uint pid = checked((uint)gameProcess.Id);
+        return pid;
     }
 
     /// <summary>
