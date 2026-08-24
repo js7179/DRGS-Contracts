@@ -3,7 +3,6 @@ using System.CommandLine;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Globalization;
 using DRGSContracts.Terminal.DisplayCapture;
 using DRGSContracts.Terminal.GameBridge;
 using ScreenCapture.NET;
@@ -37,38 +36,6 @@ internal static class Program
         DllInjector.InjectDllIntoGame(pid, DLL_PATH);
         Console.WriteLine($"Injected DLL into game with PID {pid}");
         
-        while (true)
-        {
-            Console.Write("Enter a date to override (YYYY-MM-DD): ");
-            string? input = Console.ReadLine();
-            if (input is null or "exit")
-            {
-                PipeController.ShutdownOverride();
-                break;
-            }
-
-            if (input is "" or "0")
-            {
-                PipeController.ClearTimeOverride();
-                continue;
-            }
-
-            string inputTrimmed = input.Trim();
-            
-            bool tryParse = DateOnly.TryParseExact(inputTrimmed, "yyyy-MM-dd", 
-                CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOnly);
-            if (!tryParse)
-            {
-                Console.Error.WriteLine("Could not parse date. Try again.");
-                continue;
-            }
-
-            var dto = new DateTimeOffset(dateOnly, new TimeOnly(6, 5), TimeSpan.Zero);
-            PipeController.SendDate(dto);
-            Console.WriteLine($"Wrote {dto:yyyy-MM-dd} to the pipe (filetime {dto.ToFileTime()})");
-        }
-        
-        /*
         // Main loop of the program
         int gpuIndex = parseResult.GetRequiredValue<int>("--gpu-index"),
             displayIndex = parseResult.GetRequiredValue<int>("--display-index");
@@ -82,10 +49,10 @@ internal static class Program
             switch (value)
             {
                 case Action.ScrapeVanguard:
-                    Console.Error.WriteLine("Not implemented yet");
+                    Scraper.Scrape(MissionType.VanguardContract, gpuIndex, displayIndex, outputFolder);
                     break;
                 case Action.ScrapeLethal:
-                    Console.Error.WriteLine("Not implemented yet");
+                    Scraper.Scrape(MissionType.LethalOperation, gpuIndex, displayIndex, outputFolder);
                     break;
                 case Action.ConfigureDisplay:
                     var newIndices = ConfigureDisplay(gpuIndex, displayIndex);
@@ -105,8 +72,9 @@ internal static class Program
                     Console.Error.WriteLine($"Unknown action: {value}");
                     continue;
             }
-        }*/
+        }
         
+        PipeController.ShutdownOverride();
         return 0;
     }
 

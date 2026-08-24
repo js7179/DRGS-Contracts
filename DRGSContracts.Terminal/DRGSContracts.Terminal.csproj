@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="EnsureTimeHookDllExists">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -8,23 +8,30 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <!-- <ApplicationManifest>app.manifest</ApplicationManifest> -->
+        <TimeHookDllPath>..\x64\$(Configuration)\TimeHook.dll</TimeHookDllPath>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="HPPH.System.Drawing" Version="1.0.0" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.16.0" />
         <PackageReference Include="ScreenCapture.NET.DX11" Version="3.0.0" />
         <PackageReference Include="Sharprompt" Version="3.1.2" />
         <PackageReference Include="System.CommandLine" Version="3.0.0-preview.5.26302.115" />
-        <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.10" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DRGSContracts.TimeHook\DRGSContracts.TimeHook.vcxproj">
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
-        <None Include="..\x64\$(Configuration)\TimeHook.dll">
+        <InternalsVisibleTo Include="Terminal.Tests" />        
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="$(TimeHookDllPath)">
+            <Link>TimeHook.dll</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+
+    <Target Name="EnsureTimeHookDllExists">
+        <Error Condition="!Exists('$(TimeHookDllPath)')"
+               Text="TimeHook.dll not found. Build the DRGSContracts.TimeHook C++ project first." />
+    </Target>
 </Project>

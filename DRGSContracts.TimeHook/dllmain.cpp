@@ -115,7 +115,11 @@ namespace {
                         std::cout << "Received shutdown instruction" << std::endl;
                     } else {
                         g_overrideFileTime.store(nft, std::memory_order_relaxed);
-                        std::cout << "Received new file time: " << nft << std::endl;
+                        if (nft == static_cast<uint64_t>(0)) {
+                            std::cout << "Override temporarily disabled" << std::endl;
+                        } else {
+                            std::cout << "Received new file time: " << nft << std::endl;
+                        }
                     }
                 }
             } else {
