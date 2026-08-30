@@ -31,12 +31,12 @@ internal static class Scraper
             // is fed into the hook. After the scrape was done, it updated back to this week's LO information since the
             // override was cleared. Hence, this is a workaround to make it show subsequent LO information after the initial
             // one in the date range. This issue wasn't present for VCs, so we only do this for LOs. The flashing of this week's
-            // LO after every step is normal and accepted behavior considering the 5ms delay to allow the game time to make
+            // LO after every step is normal and accepted behavior considering the 50ms delay to allow the game time to make
             // a new GetSystemTimeAsFileTime() call to update back to this week's LO.
             if (missionType == MissionType.LethalOperation)
             {
                 PipeController.ClearTimeOverride();
-                Thread.Sleep(5);
+                Thread.Sleep(50);
             }
             var targetDto = new DateTimeOffset(date, ResetTimeWithBuffer, TimeSpan.Zero);
             PipeController.SendDate(targetDto);
