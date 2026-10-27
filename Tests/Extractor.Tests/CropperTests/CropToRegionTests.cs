@@ -15,7 +15,7 @@ public class CropToRegionTests
     public async Task CropToRegion_InvalidCoordinates_Throws(int startX, int startY, int endX, int endY, string expectedParamName)
     {
         var image = new MagickImage(MagickColors.Black, 10, 10);
-        var exception = await Assert.That(() => { _ =ImageUtils.CropToRegion(image, startX, startY, endX, endY); })
+        var exception = await Assert.That(() => { _ = Cropper.CropToRegion(image, startX, startY, endX, endY); })
             .Throws<ArgumentOutOfRangeException>();
         
         await Assert.That(exception.ParamName).IsEqualTo(expectedParamName);
@@ -24,7 +24,7 @@ public class CropToRegionTests
     [Test]
     public async Task CropToRegion_NullImage_Throws()
     {
-        Assert.Throws<ArgumentNullException>(() => { _ = ImageUtils.CropToRegion(null, 0, 0, 10, 10); });
+        Assert.Throws<ArgumentNullException>(() => { _ = Cropper.CropToRegion(null, 0, 0, 10, 10); });
     }
 
     [Test]
@@ -42,7 +42,7 @@ public class CropToRegionTests
         using var clonedInputImage = inputImage.Clone();
         using var expectedImage = new MagickImage(expectedStream);
         
-        var actual =  ImageUtils.CropToRegion(clonedInputImage, startX, startY, endX, endY);
+        var actual = Cropper.CropToRegion(clonedInputImage, startX, startY, endX, endY);
 
         try
         {

@@ -1,50 +1,70 @@
-﻿using System.Diagnostics;
+﻿using System.CommandLine;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using ImageMagick;
-using ImageMagick.Colors;
 
 namespace DRGSContracts.Extractor;
 
 [ExcludeFromCodeCoverage]
-class Program
+internal static class Program
 {
-    static int Main(string[] args)
+    private static int Main(string[] args)
     {
-        /*if (args.Length != 2)
+        RootCommand rootCommand = new("Extracts mission details out of a Deep Rock Galactic: Survivor screengrab");
+        
+        Option<bool> debugOption = new("--debug", "-d")
         {
-            Console.Error.WriteLine("Expected two arguments: input.png output.json");
-            return;
-        }*/
-        
-        var imgInputFile = new FileInfo(args[0]);
-        // var jsonOutputFile = new FileInfo(args[1]);
+            Description = "Enable debug output",
+            DefaultValueFactory = _ => false,
+        };
+        rootCommand.Options.Add(debugOption);
 
-        using var imageInput = new MagickImage(imgInputFile);
-
-        if (imageInput.BaseWidth != 1920 || imageInput.BaseHeight != 1080)
+        Argument<FileInfo> inputImageArg = new("input-image")
         {
-            Console.Error.WriteLine("Program does not support any resolution other than 1920 by 1080.");
-            return 1;
-        }
+            Description = "The screenshot of the specific mission detail to scrape",
+            Arity = ArgumentArity.ExactlyOne,
+        };
+        inputImageArg.AcceptExistingOnly();
 
-        var borderColor = new ColorRGB(209, 124, 36).ToMagickColor();
+        Argument<FileInfo> outputJsonArg = new("output-json")
+        {
+            Description = "Where the resulting JSON will be written to",
+            Arity = ArgumentArity.ExactlyOne
+        };
+        outputJsonArg.AcceptLegalFilePathsOnly();
+
+        Command vcCommand = new("vanguard", "Extracts Vanguard Contract details") { inputImageArg, outputJsonArg };
+        Command loCommand = new("lethal", "Extracts Lethal Operation details") { inputImageArg, outputJsonArg };
+        vcCommand.Aliases.Add("vc");
+        loCommand.Aliases.Add("lo");
+        vcCommand.SetAction(ScrapeVanguard.ScrapeVC);
+        loCommand.SetAction(ScrapeLethal.ScrapeLO);
         
-        var borderWalker = new BorderWalker(1187, 236, borderColor, new Percentage(5));
-        int borderBottomY = borderWalker.FindBottomEdge(imageInput);
+        rootCommand.Add(vcCommand);
+        rootCommand.Add(loCommand);
+
+        var parseResult = rootCommand.Parse(args);
+        Logger.Init(parseResult.GetValue(debugOption));
         
-        Console.WriteLine($"Bottom border for this image is y={borderBottomY}");
-        
-        using var cropped = ImageUtils.CropToRegion(imageInput, 1185, 200, 1734, borderBottomY);
-        
+        return parseResult.Invoke();
+    }
+
+    /// <summary>
+    /// Temporary helper method that saves an image to disk in the temp folder
+    /// and opens it in the default image viewer.
+    /// Remove when done implementing Extractor.
+    /// </summary>
+    /// <param name="image">Image to save and open</param>
+    internal static void SaveAndOpenInTemp(IMagickImage<byte> image)
+    {
         string imgFilename = Path.ChangeExtension(Path.GetTempFileName(), "png");
         
-        cropped.Write(imgFilename);
+        image.Write(imgFilename);
         using var p = Process.Start(new ProcessStartInfo
         {
             FileName = imgFilename,
             UseShellExecute = true
         });
-        Console.WriteLine($"Crop output posted to {imgFilename}");
-        return 0;
+        Logger.Instance.LogInfo($"Image saved to {imgFilename}, opening in default image viewer");
     }
 }

@@ -2,19 +2,32 @@
 
 namespace DRGSContracts.Extractor;
 
-public class BorderWalker(int walkStartX, int walkStartY, IMagickColor<byte> walkBorderColor, Percentage walkTolerance)
+public static class BorderWalker
 {
     /// <summary>
-    /// From the given image, find the bottom edge of the given mission details
+    /// From the given image, starting point, and border color & tolerance, find the bottom edge of the given mission details
     /// </summary>
     /// <param name="img">Image with mission detail screenshots</param>
-    /// <returns></returns>
+    /// <param name="walkStartX">The X-coordinate where the walk should start</param>
+    /// <param name="walkStartY">The Y-coordinate where the walk should start</param>
+    /// <param name="walkBorderColor">The border color we should be walking</param>
+    /// <param name="walkTolerance">How much of a deviation from <paramref name="walkBorderColor"/> we can be to still be considered on the border</param>
+    /// <returns>The Y-coordinate of where the walk ends / the bottom corner is found</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="img"/> is null</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="walkStartX"/> or <paramref name="walkStartY"/>
+    /// is less than zero or greater than the width/height of the image, respectively</exception>
     /// <exception cref="InvalidOperationException">Thrown when given image does not seem to have mission details or
     ///     pixel data retrieval was unsuccessful</exception>
     /// <exception cref="IndexOutOfRangeException">Thrown when we've walked all the way through the bottom of the
     /// image and out of bounds</exception>
-    public int FindBottomEdge(IMagickImage<byte> img)
+    public static int FindBottomEdge(IMagickImage<byte> img, int walkStartX, int walkStartY, IMagickColor<byte> walkBorderColor, Percentage walkTolerance)
     {
+        ArgumentNullException.ThrowIfNull(img);
+        ArgumentOutOfRangeException.ThrowIfLessThan(walkStartX, 0);
+        ArgumentOutOfRangeException.ThrowIfLessThan(walkStartY, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(walkStartX, (int)img.Width);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(walkStartY, (int)img.Height);
+        
         using var pixels = img.GetPixels();
 
         // Check starting pixel

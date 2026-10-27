@@ -6,8 +6,10 @@ namespace Extractor.Tests;
 
 public class BorderWalkerTests
 {
+    private const int WalkStartX = 1187;
+    private const int WalkStartY = 236;
     private static readonly IMagickColor<byte> BorderColor = new ColorRGB(209, 124, 36).ToMagickColor();
-    private static readonly BorderWalker Walker = new(1187, 236, BorderColor, new Percentage(5));
+    private static readonly Percentage WalkTolerance = new(5);
 
     [Test]
     [Arguments("Extractor.Tests.TestImages.BorderWalk.01.png", 719)]
@@ -20,7 +22,7 @@ public class BorderWalkerTests
     [Arguments("Extractor.Tests.TestImages.BorderWalk.08.png", 791)]
     [Arguments("Extractor.Tests.TestImages.BorderWalk.09.png", 751)]
     [Arguments("Extractor.Tests.TestImages.BorderWalk.10.png", 863)]
-    public async Task Test_FindBottomEdge__Normal(string resourceName, int expectedY)
+    public async Task Test_FindBottomEdge_Normal(string resourceName, int expectedY)
     {
         var assembly = typeof(BorderWalkerTests).Assembly;
         await using var stream = assembly.GetManifestResourceStream(resourceName);
@@ -29,12 +31,12 @@ public class BorderWalkerTests
         
         using var img = new MagickImage(stream);
         
-        int actualY = Walker.FindBottomEdge(img);
+        int actualY = BorderWalker.FindBottomEdge(img, WalkStartX, WalkStartY, BorderColor, WalkTolerance);
         await Assert.That(actualY).IsEqualTo(expectedY);
     }
 
     [Test]
-    public async Task Test_FindBottomEdge__OutOfBounds()
+    public async Task Test_FindBottomEdge_OutOfBounds()
     {
         var assembly = typeof(BorderWalkerTests).Assembly;
         await using var stream = assembly.GetManifestResourceStream("Extractor.Tests.TestImages.BorderWalk.oob.png");
@@ -43,7 +45,7 @@ public class BorderWalkerTests
         
         using var img = new MagickImage(stream); 
         
-        Assert.Throws<IndexOutOfRangeException>(() => { Walker.FindBottomEdge(img); });
+        Assert.Throws<IndexOutOfRangeException>(() => { BorderWalker.FindBottomEdge(img, WalkStartX, WalkStartY, BorderColor, WalkTolerance); });
     }
 
     [Test]
@@ -55,7 +57,26 @@ public class BorderWalkerTests
         await Assert.That(stream).IsNotNull().Because($"Expected embedded resource 'Extractor.Tests.TestImages.BorderWalk.invalid_start.png' not found.");
 
         using var img = new MagickImage(stream);
-        Assert.Throws<InvalidOperationException>(() => { Walker.FindBottomEdge(img); });
+        Assert.Throws<InvalidOperationException>(() => { BorderWalker.FindBottomEdge(img, WalkStartX, WalkStartY, BorderColor, WalkTolerance); });
+    }
+
+    [Test]
+    public Task Test_FindBottomEdge_NullImage()
+    {
+        Assert.Throws<ArgumentNullException>(() => { _ = BorderWalker.FindBottomEdge(null, WalkStartX, WalkStartY, BorderColor, WalkTolerance); });
+        return Task.CompletedTask;
+    }
+
+    [Test]
+    [Arguments(-1, 0)]
+    [Arguments(15, 0)]
+    [Arguments(0, -1)]
+    [Arguments(0, 15)]
+    public Task Test_FindBottomEdge_ArgumentOutOfRange(int startX, int startY)
+    {
+        var img = new MagickImage(MagickColors.Black, 10, 10);
+        Assert.Throws<ArgumentOutOfRangeException>(() => { _ = BorderWalker.FindBottomEdge(img, startX, startY, BorderColor, WalkTolerance); });
+        return Task.CompletedTask;
     }
     
     [Test]

@@ -1,9 +1,13 @@
 ﻿using ImageMagick;
+using ImageMagick.Colors;
 
 namespace DRGSContracts.Extractor;
 
-public class ImageUtils
+public static class Cropper
 {
+    private static readonly IMagickColor<byte> BorderColor = new ColorRGB(209, 124, 36).ToMagickColor();
+    private static readonly Percentage BorderWalkTolerance = new(5);
+    
     /// <summary>
     /// Crops an image to a rectangular region defined by inclusive start and end pixel coordinates
     /// </summary>
@@ -33,5 +37,35 @@ public class ImageUtils
             (uint)(endY - startY + 1)); // + 1 to include last segment
 
         return image.CloneArea(geometry);
+    }
+
+    /// <summary>
+    /// Ingests a screenshot of the entire game and crops it to just the mission detail
+    /// for further processing
+    /// </summary>
+    /// <param name="image">A screengrab of the game with the mission details somewhere on it</param>
+    /// <returns>A deep copy of the mission details</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="image"/> is null</exception>
+    public static IMagickImage<byte> CropMissionDetails(IMagickImage<byte> image)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        
+        int bottomBorderY =
+            BorderWalker.FindBottomEdge(image, 1187, 236, BorderColor, BorderWalkTolerance);
+        Logger.Instance.LogDebug($"Found the bottom border of mission details at Y={bottomBorderY}");
+        
+        return CropToRegion(image, 1185, 200, 1734, bottomBorderY);
+    }
+    
+    /// <summary>
+    /// Crops a screenshot of mission details to just the header where the contract identifier lives
+    /// </summary>
+    /// <param name="image">The source image. This is cropped to the mission detail.</param>
+    /// <returns>A deep copy of just the header for the mission details</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="image"/> is null</exception>
+    public static IMagickImage<byte> CropMissionHeaderDetails(IMagickImage<byte> image)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        return CropToRegion(image, 0, 0, (int)image.Width - 1, 35);
     }
 }
